@@ -152,7 +152,7 @@ function compileAddons {
         cd  $ADDONS_BUILD_DIR && rm -rf *
    fi
    echo "#------ Configuring addons   ------#"
-   cmake -DOVERRIDE_PATHS=1 -DBUILD_DIR=$(pwd) -DCORE_SOURCE_DIR="${REPO_DIR}" -DADDONS_TO_BUILD="${ADDONS_TO_BUILD}" -DADDON_DEPENDS_PATH="${KODI_BUILD_DIR}/build" -DCMAKE_INCLUDE_PATH=/opt/vc/include:/opt/vc/include/interface:/opt/vc/include/interface/vcos/pthreads:/opt/vc/include/interface/vmcs_host/linux -DCMAKE_LIBRARY_PATH=/opt/vc/lib $REPO_DIR/cmake/addons/ |& tee -a build_addons.log
+   cmake -DCMAKE_TOOLCHAIN_FILE="${REPO_DIR}/host_gcc_toolchain.cmake" -DOVERRIDE_PATHS=1 -DBUILD_DIR=$(pwd) -DCORE_SOURCE_DIR="${REPO_DIR}" -DADDONS_TO_BUILD="${ADDONS_TO_BUILD}" -DADDON_DEPENDS_PATH="${KODI_BUILD_DIR}/build" -DCMAKE_INCLUDE_PATH=/opt/vc/include:/opt/vc/include/interface:/opt/vc/include/interface/vcos/pthreads:/opt/vc/include/interface/vmcs_host/linux -DCMAKE_LIBRARY_PATH=/opt/vc/lib $REPO_DIR/cmake/addons/ |& tee -a build_addons.log
    if [ $? -ne 0 ]; then
       echo "ADDONS ERROR: configure step failed.. Bailing out."
       exit
@@ -172,6 +172,10 @@ function compileAddons {
 				echo "usr/share" >> ${F}
 			done
 		fi
+
+		# START LTO Fix
+		sed -i "s#-DUSE_LTO=1#-DUSE_LTO=1 -DCMAKE_TOOLCHAIN_FILE=\"${REPO_DIR}/host_gcc_toolchain.cmake\"#g" debian/rules
+		# END LTO fix
 
 		# START GLES Fix
 		if [[ -f "FindOpenGLES2.cmake" ]]; then

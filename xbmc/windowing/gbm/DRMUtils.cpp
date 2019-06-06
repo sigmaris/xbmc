@@ -31,6 +31,7 @@ CDRMUtils::CDRMUtils()
   : m_connector(new connector)
   , m_encoder(new encoder)
   , m_crtc(new crtc)
+  , m_orig_crtc(new crtc)
   , m_video_plane(new plane)
   , m_gui_plane(new plane)
 {
@@ -276,33 +277,160 @@ bool CDRMUtils::FindEncoder()
 
 bool CDRMUtils::FindCrtc()
 {
-  for(auto i = 0; i < m_drm_resources->count_crtcs; i++)
+  std::vector<struct crtc_option> crtcs = FindCrtcOptions();
+  if (crtcs.empty())
   {
-    m_crtc->crtc = drmModeGetCrtc(m_fd, m_drm_resources->crtcs[i]);
-    if(m_crtc->crtc->crtc_id == m_encoder->encoder->crtc_id)
+    CLog::Log(LOGERROR, "CDRMUtils::%s - No usable CRTCs found", __FUNCTION__);
+    return false;
+  }
+
+  delete m_crtc;
+  int best_score = -1;
+  for (auto it = crtcs.begin(); it != crtcs.end(); ++it)
+  {
+    if (it->GetScore() > best_score)
     {
-      CLog::Log(LOGDEBUG, "CDRMUtils::%s - found crtc: %d", __FUNCTION__,
-                                                            m_crtc->crtc->crtc_id);
-      m_crtc_index = i;
-      break;
+      m_crtc = it->crtc_obj;
+      m_video_plane->plane = it->video_plane;
+      m_gui_plane->plane = it->gui_plane;
+
+      if (!it->gui_10bit)
+        m_gui_plane->SetFormat(DRM_FORMAT_XRGB8888);
+
+      best_score = it->GetScore();
     }
-    drmModeFreeCrtc(m_crtc->crtc);
-    m_crtc->crtc = nullptr;
   }
 
-  if(!m_crtc->crtc)
-  {
-    CLog::Log(LOGERROR, "CDRMUtils::%s - could not get crtc: %s", __FUNCTION__, strerror(errno));
-    return false;
-  }
+  CLog::Log(LOGDEBUG, "CDRMUtils::%s - found CRTC: %d", __FUNCTION__, m_crtc->crtc->crtc_id);
 
-  if (!GetProperties(m_fd, m_crtc->crtc->crtc_id, DRM_MODE_OBJECT_CRTC, m_crtc))
+  for (auto it = crtcs.begin(); it != crtcs.end(); ++it)
   {
-    CLog::Log(LOGERROR, "CDRMUtils::%s - could not get crtc %u properties: %s", __FUNCTION__, m_crtc->crtc->crtc_id, strerror(errno));
-    return false;
+    if (m_crtc != it->crtc_obj)
+    {
+      FreeProperties(it->crtc_obj);
+      it->FreeCrtc();
+      drmModeFreePlane(it->video_plane);
+      drmModeFreePlane(it->gui_plane);
+    }
   }
 
   return true;
+}
+
+
+std::vector<struct crtc_option> CDRMUtils::FindCrtcOptions()
+{
+  std::vector<struct crtc_option> crtcs;
+
+  drmModePlaneResPtr plane_resources = drmModeGetPlaneResources(m_fd);
+  if (!plane_resources)
+  {
+    CLog::Log(LOGERROR, "CDRMUtils::%s - drmModeGetPlaneResources failed: %s", __FUNCTION__, strerror(errno));
+    return crtcs;
+  }
+
+  for (auto i = 0; i < m_drm_resources->count_crtcs; i++)
+  {
+    if (m_encoder->encoder->possible_crtcs & (1 << i))
+    {
+      struct crtc_option crtc_opt;
+      crtc_opt.crtc_index = i;
+      crtc_opt.crtc_obj = new crtc();
+      crtc_opt.crtc_obj->crtc = drmModeGetCrtc(m_fd, m_drm_resources->crtcs[i]);
+
+      if (!crtc_opt.crtc_obj->crtc)
+      {
+        CLog::Log(LOGERROR, "CDRMUtils::%s - could not get crtc: %s", __FUNCTION__, strerror(errno));
+        crtc_opt.FreeCrtc();
+        continue;
+      }
+
+      if (crtc_opt.crtc_obj->crtc->crtc_id == m_encoder->encoder->crtc_id)
+      {
+        crtc_opt.is_current = true;
+        m_orig_crtc->crtc = drmModeGetCrtc(m_fd, crtc_opt.crtc_obj->crtc->crtc_id);
+        if (!GetProperties(m_fd, m_orig_crtc->crtc->crtc_id, DRM_MODE_OBJECT_CRTC, m_orig_crtc))
+        {
+          CLog::Log(LOGERROR, "CDRMUtils::%s - could not get original crtc %u properties: %s",
+                    __FUNCTION__, m_orig_crtc->crtc->crtc_id, strerror(errno));
+        }
+      }
+
+      if (!GetProperties(m_fd, crtc_opt.crtc_obj->crtc->crtc_id, DRM_MODE_OBJECT_CRTC, crtc_opt.crtc_obj))
+      {
+        CLog::Log(LOGERROR, "CDRMUtils::%s - could not get crtc %u properties: %s",
+                  __FUNCTION__, crtc_opt.crtc_obj->crtc->crtc_id, strerror(errno));
+        crtc_opt.FreeCrtc();
+        continue;
+      }
+
+      // If this CRTC is available and has suitable planes, add it to the list
+      if ((crtc_opt.crtc_obj->crtc->crtc_id == m_encoder->encoder->crtc_id || !CrtcIsActive(crtc_opt.crtc_obj))
+          && FindCrtcOptionPlanes(plane_resources, crtc_opt))
+      {
+        crtcs.push_back(crtc_opt);
+      }
+      else
+      {
+        CLog::Log(LOGDEBUG, "CDRMUtils::%s - CRTC %u is not a suitable option",
+                  __FUNCTION__, crtc_opt.crtc_obj->crtc->crtc_id);
+        FreeProperties(crtc_opt.crtc_obj);
+        crtc_opt.FreeCrtc();
+        continue;
+      }
+    }
+  }
+
+  drmModeFreePlaneResources(plane_resources);
+
+  return crtcs;
+}
+
+bool CDRMUtils::FindCrtcOptionPlanes(drmModePlaneResPtr resources, struct crtc_option& crtc_opt)
+{
+  crtc_opt.video_plane = FindPlane(resources, crtc_opt, KODI_VIDEO_PLANE);
+  crtc_opt.gui_plane = FindPlane(resources, crtc_opt, KODI_GUI_10_PLANE);
+  crtc_opt.gui_10bit = true;
+
+  /* fallback to 8bit plane if 10bit plane doesn't exist */
+  if (!crtc_opt.gui_plane)
+  {
+    crtc_opt.gui_plane = FindPlane(resources, crtc_opt, KODI_GUI_PLANE);
+    crtc_opt.gui_10bit = false;
+  }
+
+  /* If still no possible GUI plane, video may have claimed the only available plane.
+     Try again, without any video plane this time. */
+  if (!crtc_opt.gui_plane && crtc_opt.video_plane)
+  {
+    CLog::Log(LOGDEBUG, "CDRMUtils::%s - CRTC %u has no gui plane, retrying without video plane",
+              __FUNCTION__, crtc_opt.crtc_obj->crtc->crtc_id);
+    drmModeFreePlane(crtc_opt.video_plane);
+    crtc_opt.video_plane = nullptr;
+    crtc_opt.gui_plane = FindPlane(resources, crtc_opt, KODI_GUI_10_PLANE);
+    crtc_opt.gui_10bit = true;
+    if (!crtc_opt.gui_plane)
+    {
+      crtc_opt.gui_plane = FindPlane(resources, crtc_opt, KODI_GUI_PLANE);
+      crtc_opt.gui_10bit = false;
+    }
+  }
+
+  /* If there is no GUI plane available, return false indicating this CRTC
+     shouldn't be considered as a possible option. */
+  return crtc_opt.gui_plane != nullptr;
+}
+
+bool CDRMUtils::CrtcIsActive(struct crtc* crtc)
+{
+  for (uint32_t i = 0; i < crtc->props->count_props; i++)
+  {
+    if (!strcmp(crtc->props_info[i]->name, "ACTIVE"))
+    {
+      return crtc->props->prop_values[i];
+    }
+  }
+  return false;
 }
 
 bool CDRMUtils::FindPreferredMode()
@@ -350,13 +478,13 @@ bool CDRMUtils::SupportsFormat(drmModePlanePtr plane, uint32_t format)
   return false;
 }
 
-drmModePlanePtr CDRMUtils::FindPlane(drmModePlaneResPtr resources, int crtc_index, int type)
+drmModePlanePtr CDRMUtils::FindPlane(drmModePlaneResPtr resources, const struct crtc_option& crtc_opt, int type)
 {
   for (uint32_t i = 0; i < resources->count_planes; i++)
   {
     drmModePlanePtr plane = drmModeGetPlane(m_fd, resources->planes[i]);
 
-    if (plane && plane->possible_crtcs & (1 << crtc_index))
+    if (plane && plane->possible_crtcs & (1 << crtc_opt.crtc_index))
     {
       drmModeObjectPropertiesPtr props = drmModeObjectGetProperties(m_fd, plane->plane_id, DRM_MODE_OBJECT_PLANE);
 
@@ -372,7 +500,8 @@ drmModePlanePtr CDRMUtils::FindPlane(drmModePlaneResPtr resources, int crtc_inde
             {
               if (SupportsFormat(plane, DRM_FORMAT_NV12))
               {
-                CLog::Log(LOGDEBUG, "CDRMUtils::%s - found video plane %u", __FUNCTION__, plane->plane_id);
+                CLog::Log(LOGDEBUG, "CDRMUtils::%s - CRTC %u has video plane %u",
+                          __FUNCTION__, crtc_opt.crtc_obj->crtc->crtc_id, plane->plane_id);
                 drmModeFreeProperty(p);
                 drmModeFreeObjectProperties(props);
                 return plane;
@@ -383,14 +512,15 @@ drmModePlanePtr CDRMUtils::FindPlane(drmModePlaneResPtr resources, int crtc_inde
             case KODI_GUI_PLANE:
             {
               uint32_t plane_id = 0;
-              if (m_video_plane->plane)
-                plane_id = m_video_plane->plane->plane_id;
+              if (crtc_opt.video_plane)
+                plane_id = crtc_opt.video_plane->plane_id;
 
               if (plane->plane_id != plane_id &&
                   (plane_id == 0 || SupportsFormat(plane, DRM_FORMAT_ARGB8888)) &&
                   SupportsFormat(plane, DRM_FORMAT_XRGB8888))
               {
-                CLog::Log(LOGDEBUG, "CDRMUtils::%s - found gui plane %u", __FUNCTION__, plane->plane_id);
+                CLog::Log(LOGDEBUG, "CDRMUtils::%s - CRTC %u has gui plane %u",
+                          __FUNCTION__, crtc_opt.crtc_obj->crtc->crtc_id, plane->plane_id);
                 drmModeFreeProperty(p);
                 drmModeFreeObjectProperties(props);
                 return plane;
@@ -401,14 +531,15 @@ drmModePlanePtr CDRMUtils::FindPlane(drmModePlaneResPtr resources, int crtc_inde
             case KODI_GUI_10_PLANE:
             {
               uint32_t plane_id = 0;
-              if (m_video_plane->plane)
-                plane_id = m_video_plane->plane->plane_id;
+              if (crtc_opt.video_plane)
+                plane_id = crtc_opt.video_plane->plane_id;
 
               if (plane->plane_id != plane_id &&
                   (plane_id == 0 || SupportsFormat(plane, DRM_FORMAT_ARGB2101010)) &&
                   SupportsFormat(plane, DRM_FORMAT_XRGB2101010))
               {
-                CLog::Log(LOGDEBUG, "CDRMUtils::%s - found gui 10 plane %u", __FUNCTION__, plane->plane_id);
+                CLog::Log(LOGDEBUG, "CDRMUtils::%s - CRTC %u has gui 10 plane %u",
+                          __FUNCTION__, crtc_opt.crtc_obj->crtc->crtc_id, plane->plane_id);
                 drmModeFreeProperty(p);
                 drmModeFreeObjectProperties(props);
                 return plane;
@@ -428,32 +559,11 @@ drmModePlanePtr CDRMUtils::FindPlane(drmModePlaneResPtr resources, int crtc_inde
     drmModeFreePlane(plane);
   }
 
-  CLog::Log(LOGWARNING, "CDRMUtils::%s - could not find plane", __FUNCTION__);
   return nullptr;
 }
 
-bool CDRMUtils::FindPlanes()
+bool CDRMUtils::GetPlanesProperties()
 {
-  drmModePlaneResPtr plane_resources = drmModeGetPlaneResources(m_fd);
-  if (!plane_resources)
-  {
-    CLog::Log(LOGERROR, "CDRMUtils::%s - drmModeGetPlaneResources failed: %s", __FUNCTION__, strerror(errno));
-    return false;
-  }
-
-  m_video_plane->plane = FindPlane(plane_resources, m_crtc_index, KODI_VIDEO_PLANE);
-  m_gui_plane->plane = FindPlane(plane_resources, m_crtc_index, KODI_GUI_10_PLANE);
-
-  /* fallback to 8bit plane if 10bit plane doesn't exist */
-  if (m_gui_plane->plane == nullptr)
-  {
-    drmModeFreePlane(m_gui_plane->plane);
-    m_gui_plane->plane = FindPlane(plane_resources, m_crtc_index, KODI_GUI_PLANE);
-    m_gui_plane->SetFormat(DRM_FORMAT_XRGB8888);
-  }
-
-  drmModeFreePlaneResources(plane_resources);
-
   // video plane may not be available
   if (m_video_plane->plane)
   {
@@ -636,7 +746,7 @@ bool CDRMUtils::InitDrm()
       return false;
     }
 
-    if(!FindPlanes())
+    if (!GetPlanesProperties())
     {
       return false;
     }
@@ -679,26 +789,24 @@ bool CDRMUtils::InitDrm()
     CLog::Log(LOGNOTICE, "CDRMUtils::%s - successfully authorized drm magic", __FUNCTION__);
   }
 
-  m_orig_crtc = drmModeGetCrtc(m_fd, m_crtc->crtc->crtc_id);
-
   return true;
 }
 
 bool CDRMUtils::RestoreOriginalMode()
 {
-  if(!m_orig_crtc)
+  if (!m_orig_crtc->crtc)
   {
     return false;
   }
 
   auto ret = drmModeSetCrtc(m_fd,
-                            m_orig_crtc->crtc_id,
-                            m_orig_crtc->buffer_id,
-                            m_orig_crtc->x,
-                            m_orig_crtc->y,
+                            m_orig_crtc->crtc->crtc_id,
+                            m_orig_crtc->crtc->buffer_id,
+                            m_orig_crtc->crtc->x,
+                            m_orig_crtc->crtc->y,
                             &m_connector->connector->connector_id,
                             1,
-                            &m_orig_crtc->mode);
+                            &m_orig_crtc->crtc->mode);
 
   if(ret)
   {
@@ -708,8 +816,9 @@ bool CDRMUtils::RestoreOriginalMode()
 
   CLog::Log(LOGDEBUG, "CDRMUtils::%s - set original crtc mode", __FUNCTION__);
 
-  drmModeFreeCrtc(m_orig_crtc);
-  m_orig_crtc = nullptr;
+  FreeProperties(m_orig_crtc);
+  drmModeFreeCrtc(m_orig_crtc->crtc);
+  m_orig_crtc->crtc = nullptr;
 
   return true;
 }
@@ -717,6 +826,8 @@ bool CDRMUtils::RestoreOriginalMode()
 void CDRMUtils::DestroyDrm()
 {
   RestoreOriginalMode();
+  delete m_orig_crtc;
+  m_orig_crtc = nullptr;
 
   auto ret = drmDropMaster(m_fd);
   if (ret < 0)

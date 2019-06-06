@@ -92,6 +92,38 @@ struct drm_fb
   uint32_t format;
 };
 
+struct crtc_option
+{
+  struct crtc* crtc_obj;
+  int crtc_index;
+  drmModePlanePtr video_plane = nullptr;
+  drmModePlanePtr gui_plane = nullptr;
+  bool gui_10bit = false;
+  bool is_current = false;
+
+  int GetScore()
+  {
+    int score = is_current;
+    if (gui_10bit)
+      score += 2;
+    if (video_plane)
+      score += 4;
+    return score;
+  }
+
+  void FreeCrtc()
+  {
+    if (crtc_obj)
+    {
+      if (crtc_obj->crtc)
+        drmModeFreeCrtc(crtc_obj->crtc);
+
+      delete crtc_obj;
+      crtc_obj = nullptr;
+    }
+  }
+};
+
 class CDRMUtils
 {
 public:
@@ -134,6 +166,7 @@ protected:
   struct connector *m_connector = nullptr;
   struct encoder *m_encoder = nullptr;
   struct crtc *m_crtc = nullptr;
+  struct crtc* m_orig_crtc = nullptr;
   struct plane *m_video_plane = nullptr;
   struct plane *m_gui_plane = nullptr;
   drmModeModeInfo *m_mode = nullptr;
@@ -143,13 +176,16 @@ protected:
 
 private:
   static bool SupportsFormat(drmModePlanePtr plane, uint32_t format);
-  drmModePlanePtr FindPlane(drmModePlaneResPtr resources, int crtc_index, int type);
+  drmModePlanePtr FindPlane(drmModePlaneResPtr resources, const struct crtc_option& crtc_opt, int type);
 
   bool GetResources();
   bool FindConnector();
   bool FindEncoder();
   bool FindCrtc();
-  bool FindPlanes();
+  std::vector<struct crtc_option> FindCrtcOptions();
+  bool CrtcIsActive(struct crtc* crtc);
+  bool GetPlanesProperties();
+  bool FindCrtcOptionPlanes(drmModePlaneResPtr resources, struct crtc_option& crtc_opt);
   bool FindModifiersForPlane(struct plane *object);
   bool FindPreferredMode();
   bool RestoreOriginalMode();
@@ -158,11 +194,9 @@ private:
   bool CheckConnector(int connectorId);
 
   KODI::UTILS::POSIX::CFileHandle m_renderFd;
-  int m_crtc_index;
   std::string m_module;
 
   drmModeResPtr m_drm_resources = nullptr;
-  drmModeCrtcPtr m_orig_crtc = nullptr;
 };
 
 }

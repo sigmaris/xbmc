@@ -1,0 +1,83 @@
+---
+kind: pipeline
+type: docker
+name: default
+
+platform:
+  os: linux
+  arch: arm64
+
+workspace:
+  base: /drone
+  path: kodi-src
+
+steps:
+# Build Kodi alone
+- name: build_kodi
+  image: sigmaris/kodibuilder:latest
+  commands:
+  - cd ..
+  - mkdir kodi-build
+  - cd kodi-build
+  - ../kodi-src/docker/build_kodi.sh
+  - cd ..
+  - tar cjvf kodi-build.tar.bz2 kodi-build
+  when:
+    ref:
+      exclude:
+      - refs/tags/*-addons
+
+- name: build_addons
+  image: sigmaris/kodibuilder:latest
+  commands:
+  - cd ..
+  - kodi-src/docker/extract_build_tarball.sh
+  - cd kodi-build
+  - ../kodi-src/docker/build_addons.sh
+  when:
+    ref:
+      include:
+      - refs/tags/*-addons
+
+# Publish kodi build artifacts
+- name: publish_kodi
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_token
+    files:
+    - /drone/kodi-build.tar.bz2
+    - /drone/kodi-build/packages/*.deb
+    checksum:
+    - md5
+    - sha1
+    - sha256
+  when:
+    event: tag
+    ref:
+      exclude:
+      - refs/tags/*-addons
+
+# Publish addons build artifacts
+- name: publish_addons
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_token
+    files:
+    - /drone/kodi-build/build/addons_build/*.deb
+    checksum:
+    - md5
+    - sha1
+    - sha256
+  when:
+    event: tag
+    ref:
+      include:
+      - refs/tags/*-addons
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/heads/rp64*
+  - refs/tags/*

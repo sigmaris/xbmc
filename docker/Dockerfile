@@ -1,5 +1,9 @@
 FROM debian:buster
 
+RUN curl -L https://github.com/sigmaris/rockpkgs/raw/master/pub.key | apt-key add -
+
+RUN echo "deb http://sigmaris.github.io/rockpkgs buster main" > /etc/apt/sources.list.d/sigmarisrockpkgs.list
+
 RUN apt-get update && apt-get install -y \
 autoconf \
 automake \
@@ -91,6 +95,7 @@ libraw-dev \
 libresid-builder-dev \
 librsvg2-bin \
 librtmp-dev \
+libshairplay-dev \
 libsidplay2-dev \
 libsmbclient-dev \
 libsqlite3-dev \
@@ -121,10 +126,6 @@ uuid-dev \
 zip \
 zlib1g-dev
 
-# build shairplay
-RUN git clone https://github.com/juhovh/shairplay.git
-RUN cd /shairplay && ./autogen.sh && ./configure --disable-shared --enable-static --with-playfair --prefix=/shairplay-build && make -j$(getconf _NPROCESSORS_ONLN) install
-
 ARG linux_libc_dev_release
 ARG linux_libc_dev_sha256
 ARG linux_libc_dev_file
@@ -143,8 +144,5 @@ RUN chmod 0755 /usr/local/bin/in-container-build.sh
 VOLUME /kodi-src /kodi-build
 
 WORKDIR /kodi-build
-
-ENV CMAKE_INCLUDE_PATH=/shairplay-build/include
-ENV CMAKE_LIBRARY_PATH=/shairplay-build/lib
 
 CMD /usr/local/bin/in-container-build.sh

@@ -1,5 +1,7 @@
 FROM debian:buster
 
+RUN apt-get update && apt-get install -y curl gpg
+
 RUN curl -L https://github.com/sigmaris/rockpkgs/raw/master/pub.key | apt-key add -
 
 RUN echo "deb http://sigmaris.github.io/rockpkgs buster main" > /etc/apt/sources.list.d/sigmarisrockpkgs.list
@@ -10,7 +12,6 @@ automake \
 autopoint \
 build-essential \
 cmake \
-curl \
 debhelper \
 default-jre \
 default-libmysqlclient-dev \

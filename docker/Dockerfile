@@ -83,6 +83,7 @@ libxkbcommon-dev \
 libxrandr-dev \
 libxslt1-dev \
 libxt-dev \
+lsb-release \
 python-dev \
 rapidjson-dev \
 swig \

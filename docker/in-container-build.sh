@@ -59,6 +59,12 @@ echo "**************************"
 
 cpack
 
+echo "*******************************************"
+echo "*** Installing binary addon dev package ***"
+echo "*******************************************"
+
+dpkg -i packages/kodi-addon-dev_*_all.deb
+
 echo "*************************************"
 echo "*** Building libkodiplatform debs ***"
 echo "*************************************"
@@ -75,12 +81,6 @@ echo "***************************************"
 
 dpkg -i ../libkodiplatform*.deb
 cd "$KODI_BUILD_DIR"
-
-echo "*******************************************"
-echo "*** Installing binary addon dev package ***"
-echo "*******************************************"
-
-dpkg -i packages/kodi-addon-dev_*_all.deb
 
 echo "*********************************"
 echo "*** Configuring binary addons ***"

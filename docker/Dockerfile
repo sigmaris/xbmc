@@ -139,11 +139,8 @@ RUN curl -L -o "${linux_libc_dev_file}" "https://github.com/sigmaris/linux/relea
 
 RUN mkdir /kodi-src && mkdir /kodi-build
 
-COPY in-container-build.sh /usr/local/bin/in-container-build.sh
-RUN chmod 0755 /usr/local/bin/in-container-build.sh
-
 VOLUME /kodi-src /kodi-build
 
 WORKDIR /kodi-build
 
-CMD /usr/local/bin/in-container-build.sh
+CMD /bin/bash /kodi-src/docker/in-container-build.sh

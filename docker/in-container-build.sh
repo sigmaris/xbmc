@@ -3,6 +3,7 @@
 REPO_DIR="$(realpath ../kodi-src)"
 KODI_BUILD_DIR="$(pwd)"
 ADDONS_BUILD_NUMBER="1"
+KODI_PLATFORM_BUILD_NUMBER="1"
 
 echo "************************"
 echo "*** Configuring kodi ***"
@@ -52,11 +53,28 @@ echo "*********************"
 
 cmake --build . -- -j$(getconf _NPROCESSORS_ONLN) \
 
-echo "*********************"
-echo "*** Building debs ***"
-echo "*********************"
+echo "**************************"
+echo "*** Building kodi debs ***"
+echo "**************************"
 
 cpack
+
+echo "*************************************"
+echo "*** Building libkodiplatform debs ***"
+echo "*************************************"
+
+cd packages
+git clone https://github.com/xbmc/kodi-platform.git
+cd kodi-platform
+sed -e "s/#TAGREV#/${KODI_PLATFORM_BUILD_NUMBER}/g" -e "s/#DIST#/$(lsb_release -cs)/g" debian/changelog.in > debian/changelog
+dpkg-buildpackage -us -uc -b
+
+echo "***************************************"
+echo "*** Installing libkodiplatform debs ***"
+echo "***************************************"
+
+dpkg -i ../libkodiplatform*.deb
+cd "$KODI_BUILD_DIR"
 
 echo "*******************************************"
 echo "*** Installing binary addon dev package ***"

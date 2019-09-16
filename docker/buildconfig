@@ -1,3 +1,0 @@
-linux_libc_dev_release="rockpro64-kernel-5.3.0-rc6-next-20190830-g18ae9759e72c-sigmaris"
-linux_libc_dev_file="linux-libc-dev_5.3.0-rc6-next-20190830-g18ae9759e72c-sigmaris_arm64.deb"
-linux_libc_dev_sha256="bb282f7a0f9bcc705dbe237e5e980d588c77e0f5f8aa87ed1b33b7c1189c7384"

@@ -73,7 +73,7 @@ cd packages
 git clone https://github.com/xbmc/kodi-platform.git
 cd kodi-platform
 sed -e "s/#TAGREV#/${KODI_PLATFORM_BUILD_NUMBER}/g" -e "s/#DIST#/$(lsb_release -cs)/g" debian/changelog.in > debian/changelog
-dpkg-buildpackage -us -uc -b
+dpkg-buildpackage -us -uc -b --jobs=auto
 
 echo "***************************************"
 echo "*** Installing libkodiplatform debs ***"
@@ -113,7 +113,7 @@ do
 		# 	sed -i "s/-DUSE_LTO=1//g" debian/rules
 		# fi
 
-		dpkg-buildpackage -us -uc -b
+		dpkg-buildpackage -us -uc -b --jobs=auto
 		if [ $? -ne 0 ]
 		then
 			ADDONS_BUILD_FAILED+=("${D}")

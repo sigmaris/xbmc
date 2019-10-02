@@ -1,4 +1,4 @@
 LIBNAME=ffmpeg
 BASE_URL=https://github.com/sigmaris/FFmpeg
-VERSION=rp64-test-20190904212128
+VERSION=rp64-test-20191002192300
 ARCHIVE=$(LIBNAME)-$(VERSION).tar.gz

@@ -7,6 +7,10 @@ platform:
   os: linux
   arch: arm64
 
+workspace:
+  base: /drone
+  path: kodi-src
+
 steps:
 - name: build
   image: sigmaris/kodibuilder:latest

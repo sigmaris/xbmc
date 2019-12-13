@@ -1,0 +1,37 @@
+---
+kind: pipeline
+type: docker
+name: default
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+- name: build
+  image: sigmaris/kodibuilder:latest
+  commands:
+  - cd ..
+  - mkdir kodi-build
+  - cd kodi-build
+  - ../kodi-src/docker/in-container-build.sh
+- name: publish
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_token
+    files:
+    - packages/*.deb
+    - build/addons_build/*.deb
+    checksum:
+    - md5
+    - sha1
+    - sha256
+  when:
+    event: tag
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/heads/rp64*
+  - refs/tags/*

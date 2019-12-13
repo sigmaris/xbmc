@@ -51,7 +51,7 @@ echo "*********************"
 echo "*** Building kodi ***"
 echo "*********************"
 
-cmake --build . -- -j$(getconf _NPROCESSORS_ONLN) \
+cmake --build . -- -j$(getconf _NPROCESSORS_ONLN)
 
 echo "**************************"
 echo "*** Building kodi debs ***"

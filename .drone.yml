@@ -25,8 +25,8 @@ steps:
     api_key:
       from_secret: github_token
     files:
-    - packages/*.deb
-#    - build/addons_build/*.deb
+    - /drone/kodi-build/packages/*.deb
+#    - /drone/kodi-build/build/addons_build/*.deb
     checksum:
     - md5
     - sha1

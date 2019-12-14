@@ -26,7 +26,7 @@ steps:
       from_secret: github_token
     files:
     - packages/*.deb
-    - build/addons_build/*.deb
+#    - build/addons_build/*.deb
     checksum:
     - md5
     - sha1

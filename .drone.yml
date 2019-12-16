@@ -20,6 +20,7 @@ steps:
   - mkdir kodi-build
   - cd kodi-build
   - ../kodi-src/docker/build_kodi.sh
+  - rm -f packages/kodi-*-aarch64-Unspecified.deb
   - cd ..
   - tar cjvf kodi-build.tar.bz2 kodi-build
   when:

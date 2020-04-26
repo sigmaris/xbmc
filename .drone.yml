@@ -1,7 +1,7 @@
 ---
 kind: pipeline
 type: docker
-name: default
+name: buster
 
 platform:
   os: linux
@@ -11,9 +11,15 @@ workspace:
   base: /drone
   path: kodi-src
 
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/heads/rp64*
+  - refs/tags/*
+
 steps:
-# Build Kodi alone
-- name: build_kodi_buster
+# Stage 1: build Kodi alone
+- name: build_kodi
   image: sigmaris/kodibuilder:buster
   environment:
     KODI_DISTRO_CODENAME: buster
@@ -30,7 +36,84 @@ steps:
       exclude:
       - refs/tags/*-addons
 
-- name: build_kodi_bullseye
+# Stage 2: build addons for tag with -addons
+- name: build_addons
+  image: sigmaris/kodibuilder:buster
+  environment:
+    KODI_DISTRO_CODENAME: buster
+  commands:
+  - cd ..
+  - kodi-src/docker/extract_build_tarball.sh buster
+  - cd kodi-build-buster
+  - ../kodi-src/docker/build_addons.sh
+  when:
+    ref:
+      include:
+      - refs/tags/*-addons
+
+# Publish kodi build artifacts
+- name: publish_kodi
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_token
+    files:
+    - /drone/kodi-build-buster.tar.bz2
+    - /drone/kodi-build-buster/packages/*.deb
+    checksum:
+    - md5
+    - sha1
+    - sha256
+  depends_on:
+  - build_kodi
+  when:
+    event: tag
+    ref:
+      exclude:
+      - refs/tags/*-addons
+
+# Publish addons build artifacts
+- name: publish_addons
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_token
+    files:
+    - /drone/kodi-build-buster/build/addons_build/*.deb
+    checksum:
+    - md5
+    - sha1
+    - sha256
+  depends_on:
+  - build_addons
+  when:
+    event: tag
+    ref:
+      include:
+      - refs/tags/*-addons
+
+---
+kind: pipeline
+type: docker
+name: bullseye
+
+platform:
+  os: linux
+  arch: arm64
+
+workspace:
+  base: /drone
+  path: kodi-src
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/heads/rp64*
+  - refs/tags/*
+
+steps:
+# Stage 1: Build Kodi alone
+- name: build_kodi
   image: sigmaris/kodibuilder:bullseye
   environment:
     KODI_DISTRO_CODENAME: bullseye
@@ -48,21 +131,7 @@ steps:
       - refs/tags/*-addons
 
 # Stage 2: build addons for tag with -addons
-- name: build_addons_buster
-  image: sigmaris/kodibuilder:buster
-  environment:
-    KODI_DISTRO_CODENAME: buster
-  commands:
-  - cd ..
-  - kodi-src/docker/extract_build_tarball.sh buster
-  - cd kodi-build-buster
-  - ../kodi-src/docker/build_addons.sh
-  when:
-    ref:
-      include:
-      - refs/tags/*-addons
-
-- name: build_addons_bullseye
+- name: build_addons
   image: sigmaris/kodibuilder:bullseye
   environment:
     KODI_DISTRO_CODENAME: bullseye
@@ -83,17 +152,14 @@ steps:
     api_key:
       from_secret: github_token
     files:
-    - /drone/kodi-build-buster.tar.bz2
     - /drone/kodi-build-bullseye.tar.bz2
-    - /drone/kodi-build-buster/packages/*.deb
     - /drone/kodi-build-bullseye/packages/*.deb
     checksum:
     - md5
     - sha1
     - sha256
   depends_on:
-  - build_kodi_buster
-  - build_kodi_bullseye
+  - build_kodi
   when:
     event: tag
     ref:
@@ -107,23 +173,15 @@ steps:
     api_key:
       from_secret: github_token
     files:
-    - /drone/kodi-build-buster/build/addons_build/*.deb
     - /drone/kodi-build-bullseye/build/addons_build/*.deb
     checksum:
     - md5
     - sha1
     - sha256
   depends_on:
-  - build_addons_buster
-  - build_addons_bullseye
+  - build_addons
   when:
     event: tag
     ref:
       include:
       - refs/tags/*-addons
-
-trigger:
-  ref:
-  - refs/heads/master
-  - refs/heads/rp64*
-  - refs/tags/*

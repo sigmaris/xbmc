@@ -89,6 +89,7 @@ def pipeline(suite):
                 },
                 "depends_on": ["build_kodi"],
                 "when": {
+                    "event": "tag",
                     "ref": {
                         "exclude": ["refs/tags/*-addons"]
                     }
@@ -114,6 +115,7 @@ def pipeline(suite):
                 },
                 "depends_on": ["build_addons"],
                 "when": {
+                    "event": "tag",
                     "ref": {
                         "include": ["refs/tags/*-addons"]
                     }

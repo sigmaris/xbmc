@@ -9,7 +9,7 @@ def pipeline(suite):
     return {
         "kind": "pipeline",
         "type": "docker",
-        "name": suite,
+        "name": "build_%s" % suite,
         "platform": {
             "os": "linux",
             "arch": "arm64",

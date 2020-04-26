@@ -5,6 +5,7 @@ KODI_BUILD_DIR="$(pwd)"
 
 : "${KODI_BUILD_NUMBER:=$DRONE_BUILD_NUMBER}"
 : "${KODI_PLATFORM_BUILD_NUMBER:=$DRONE_BUILD_NUMBER}"
+: "${KODI_DISTRO_CODENAME:=unknown}"
 
 echo "************************"
 echo "*** Configuring kodi ***"
@@ -46,7 +47,7 @@ cmake "${REPO_DIR}" \
   -DDEBIAN_PACKAGE_VERSION="${KODI_BUILD_NUMBER}~" \
   -DDEB_PACKAGE_ARCHITECTURE=arm64 \
   -DDEBIAN_PACKAGE_TYPE=unstable \
-  -DDISTRO_CODENAME=buster
+  -DDISTRO_CODENAME="${KODI_DISTRO_CODENAME}"
 
 echo "*********************"
 echo "*** Building kodi ***"

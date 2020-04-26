@@ -31,7 +31,7 @@ do
 		VERSION_FILE="addon.xml.in"
 		[[ ! -f "${D}/addon.xml.in" ]] && VERSION_FILE="addon.xml"
 		ADDONS_PACK_VER=$(grep -oP "(  |\\t)version=\"(.*)\"" ./${D}/${VERSION_FILE} | awk -F'\"' '{print $2}')
-		sed -e "s/#PACKAGEVERSION#/${ADDONS_PACK_VER}/g" -e "s/#TAGREV#/${ADDONS_BUILD_NUMBER}/g" -e "s/#DIST#/$(lsb_release -cs)/g" debian/changelog.in > debian/changelog
+		sed -e "s/#PACKAGEVERSION#/${ADDONS_PACK_VER}/g" -e "s/#TAGREV#/${ADDONS_BUILD_NUMBER}/g" -e "s/#DIST#/${KODI_DISTRO_CODENAME}/g" debian/changelog.in > debian/changelog
 		if [[ $D == "pvr"* || $D == "audioencoder"* || $D == "visualization.waveform" ]]; then
 			for F in $(ls debian/*.install); do
 				echo "usr/lib" > ${F}

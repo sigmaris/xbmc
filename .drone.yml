@@ -13,27 +13,63 @@ workspace:
 
 steps:
 # Build Kodi alone
-- name: build_kodi
-  image: sigmaris/kodibuilder:latest
+- name: build_kodi_buster
+  image: sigmaris/kodibuilder:buster
+  environment:
+    KODI_DISTRO_CODENAME: buster
   commands:
   - cd ..
-  - mkdir kodi-build
-  - cd kodi-build
+  - mkdir kodi-build-buster
+  - cd kodi-build-buster
   - ../kodi-src/docker/build_kodi.sh
   - rm -f packages/kodi-*-aarch64-Unspecified.deb
   - cd ..
-  - tar cjvf kodi-build.tar.bz2 kodi-build
+  - tar cjvf kodi-build-buster.tar.bz2 kodi-build-buster
   when:
     ref:
       exclude:
       - refs/tags/*-addons
 
-- name: build_addons
-  image: sigmaris/kodibuilder:latest
+- name: build_kodi_bullseye
+  image: sigmaris/kodibuilder:bullseye
+  environment:
+    KODI_DISTRO_CODENAME: bullseye
   commands:
   - cd ..
-  - kodi-src/docker/extract_build_tarball.sh
-  - cd kodi-build
+  - mkdir kodi-build-bullseye
+  - cd kodi-build-bullseye
+  - ../kodi-src/docker/build_kodi.sh
+  - rm -f packages/kodi-*-aarch64-Unspecified.deb
+  - cd ..
+  - tar cjvf kodi-build-bullseye.tar.bz2 kodi-build-bullseye
+  when:
+    ref:
+      exclude:
+      - refs/tags/*-addons
+
+# Stage 2: build addons for tag with -addons
+- name: build_addons_buster
+  image: sigmaris/kodibuilder:buster
+  environment:
+    KODI_DISTRO_CODENAME: buster
+  commands:
+  - cd ..
+  - kodi-src/docker/extract_build_tarball.sh buster
+  - cd kodi-build-buster
+  - ../kodi-src/docker/build_addons.sh
+  when:
+    ref:
+      include:
+      - refs/tags/*-addons
+
+- name: build_addons_bullseye
+  image: sigmaris/kodibuilder:bullseye
+  environment:
+    KODI_DISTRO_CODENAME: bullseye
+  commands:
+  - cd ..
+  - kodi-src/docker/extract_build_tarball.sh bullseye
+  - cd kodi-build-bullseye
   - ../kodi-src/docker/build_addons.sh
   when:
     ref:
@@ -47,12 +83,17 @@ steps:
     api_key:
       from_secret: github_token
     files:
-    - /drone/kodi-build.tar.bz2
-    - /drone/kodi-build/packages/*.deb
+    - /drone/kodi-build-buster.tar.bz2
+    - /drone/kodi-build-bullseye.tar.bz2
+    - /drone/kodi-build-buster/packages/*.deb
+    - /drone/kodi-build-bullseye/packages/*.deb
     checksum:
     - md5
     - sha1
     - sha256
+  depends_on:
+  - build_kodi_buster
+  - build_kodi_bullseye
   when:
     event: tag
     ref:
@@ -66,11 +107,15 @@ steps:
     api_key:
       from_secret: github_token
     files:
-    - /drone/kodi-build/build/addons_build/*.deb
+    - /drone/kodi-build-buster/build/addons_build/*.deb
+    - /drone/kodi-build-bullseye/build/addons_build/*.deb
     checksum:
     - md5
     - sha1
     - sha256
+  depends_on:
+  - build_addons_buster
+  - build_addons_bullseye
   when:
     event: tag
     ref:

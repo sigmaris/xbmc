@@ -1,8 +1,5 @@
 def main(ctx):
-    return [
-        pipeline("buster"),
-        pipeline("bullseye"),
-    ]
+    return pipeline("bullseye")
 
 
 def pipeline(suite):

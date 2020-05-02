@@ -3,6 +3,18 @@ def main(ctx):
 
 
 def pipeline(suite):
+    addon_types = [
+        "audiodecoder",
+        "audioencoder",
+        "game",
+        "imagedecoder",
+        "inputstream",
+        "peripheral",
+        "pvr",
+        "screensaver",
+        "vfs",
+        "visualization",
+    ]
     return {
         "kind": "pipeline",
         "type": "docker",
@@ -46,26 +58,6 @@ def pipeline(suite):
                 },
             },
 
-            # Stage 2: build addons for tag with -addons
-            {
-                "name": "build_addons",
-                "image": "sigmaris/kodibuilder:%s" % suite,
-                "environment": {
-                    "KODI_DISTRO_CODENAME": suite,
-                },
-                "commands": [
-                    "cd ..",
-                    "kodi-src/docker/extract_build_tarball.sh",
-                    "cd kodi-build-%s" % suite,
-                    "../kodi-src/docker/build_addons.sh",
-                ],
-                "when": {
-                    "ref": {
-                        "include": ["refs/tags/*-addons"]
-                    }
-                },
-            },
-
             # Publish kodi build artifacts
             {
                 "name": "publish_kodi",
@@ -92,31 +84,62 @@ def pipeline(suite):
                     }
                 },
             },
-
-            # Publish addons build artifacts
-            {
-                "name": "publish_addons",
-                "image": "plugins/github-release",
-                "settings": {
-                    "api_key": {
-                        "from_secret": "github_token",
-                    },
-                    "files": [
-                        "/drone/kodi-build-%s/build/addons_build/*.deb" % suite,
-                    ],
-                    "checksum": [
-                        "md5",
-                        "sha1",
-                        "sha256",
-                    ]
-                },
-                "depends_on": ["build_addons"],
-                "when": {
-                    "event": "tag",
-                    "ref": {
-                        "include": ["refs/tags/*-addons"]
-                    }
-                },
-            },
+        ] + [
+            addons_build_step(suite, addon_type)
+            for addon_type in addon_types
+        ] + [
+            addons_publish_step(suite, addon_type)
+            for addon_type in addon_types
         ]
+    }
+
+
+def addons_build_step(suite, addons_type):
+    return {
+        "name": "build_%s_addons" % addons_type,
+        "image": "sigmaris/kodibuilder:%s" % suite,
+        "environment": {
+            "KODI_DISTRO_CODENAME": suite,
+            "ADDONS_TO_BUILD": "%s.*" % addons_type,
+        },
+        "commands": [
+            "cd ..",
+            "kodi-src/docker/extract_build_tarball.sh",
+            "cd kodi-build-%s" % suite,
+            "../kodi-src/docker/build_addons.sh",
+        ],
+        "when": {
+            "ref": {
+                "include": ["refs/tags/*-%s-addons" % addons_type]
+            }
+        },
+    }
+
+
+def addons_publish_step(suite, addons_type):
+    return {
+        "name": "publish_%s_addons" % addons_type,
+        "image": "plugins/github-release",
+        "settings": {
+            "api_key": {
+                "from_secret": "github_token",
+            },
+            "files": [
+                "/drone/kodi-build-%s/build/addons_build/*.deb" % suite,
+            ],
+            "checksum": [
+                "md5",
+                "sha1",
+                "sha256",
+            ]
+        },
+        "depends_on": [
+            "build_%s_addons" % addons_type,
+        ],
+        "when": {
+            "event": "tag",
+            "ref": {
+                "include": ["refs/tags/*-%s-addons" % addons_type]
+            }
+        },
     }

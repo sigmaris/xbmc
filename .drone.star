@@ -80,7 +80,7 @@ def kodi_pipeline(suite):
     }
 
 
-def single_addon_type_pipeline(suite, depend_on_kodi, addons_type):
+def single_addon_type_pipeline(suite, addons_type):
     return {
         "kind": "pipeline",
         "type": "docker",

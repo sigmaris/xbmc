@@ -4,6 +4,7 @@ REPO_DIR="$(realpath ../kodi-src)"
 KODI_BUILD_DIR="$(pwd)"
 
 : "${ADDONS_BUILD_NUMBER:=$DRONE_BUILD_NUMBER}"
+: "${KODI_DISTRO_CODENAME:=$(lsb_release -cs)}"
 
 echo "********************************************"
 echo "*** Installing binary addon dev packages ***"

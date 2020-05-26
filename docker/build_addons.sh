@@ -6,19 +6,11 @@ KODI_BUILD_DIR="$(pwd)"
 : "${ADDONS_BUILD_NUMBER:=$DRONE_BUILD_NUMBER}"
 : "${KODI_DISTRO_CODENAME:=$(lsb_release -cs)}"
 
-echo "********************************************"
-echo "*** Installing binary addon dev packages ***"
-echo "********************************************"
-
-dpkg -i packages/kodi-addon-dev_*_all.deb packages/libkodiplatform*.deb
-
-echo "*********************************"
-echo "*** Configuring binary addons ***"
-echo "*********************************"
-
-mkdir -p build/addons_build
 cd build/addons_build
-cmake -DBUILD_DIR="$(pwd)" -DCORE_SOURCE_DIR="${REPO_DIR}" -DADDONS_TO_BUILD="${ADDONS_TO_BUILD}" -DADDON_DEPENDS_PATH="${KODI_BUILD_DIR}/build" "${REPO_DIR}/cmake/addons/"
+
+echo "**************************"
+echo "*** Building addons... ***"
+echo "**************************"
 
 declare -a ADDONS_BUILD_OK
 declare -a ADDONS_BUILD_FAILED
@@ -28,7 +20,9 @@ do
 	if [ -d "${D}/debian" ]
 	then
 		cd "${D}"
+		echo "********************************"
 		echo "*** Building binary addon $D ***"
+		echo "********************************"
 		VERSION_FILE="addon.xml.in"
 		[[ ! -f "${D}/addon.xml.in" ]] && VERSION_FILE="addon.xml"
 		ADDONS_PACK_VER=$(grep -oP "(  |\\t)version=\"(.*)\"" ./${D}/${VERSION_FILE} | awk -F'\"' '{print $2}')

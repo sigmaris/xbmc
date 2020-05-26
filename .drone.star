@@ -107,6 +107,8 @@ def single_addon_type_pipeline(suite, addons_type):
                     "cd kodi-build",
                     "../kodi-src/docker/configure_kodi.sh",
                     "../kodi-src/docker/extract_build_tarball.sh",
+                    "../kodi-src/docker/prepare_addons.sh",
+                    "../kodi-src/docker/patch_addons.sh '%s'" % addons_type,
                     "../kodi-src/docker/build_addons.sh",
                 ],
             },

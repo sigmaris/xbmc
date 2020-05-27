@@ -1,3 +1,15 @@
+diff -r -u a/game.libretro.beetle-supergrafx/debian/control b/game.libretro.beetle-supergrafx/debian/control
+--- a/game.libretro.beetle-supergrafx/debian/control   2020-05-26 18:38:09.000000000 +0000
++++ b/game.libretro.beetle-supergrafx/debian/control   2020-05-26 18:38:53.000000000 +0000
+@@ -4,7 +4,7 @@
+ Build-Depends: debhelper (>= 9.0.0),
+                cmake,
+                kodi-addon-dev,
+-               libretro-beetle-supergrafx (>= 1.23.0) | beetle-supergrafx (>= 1.23.0)
++               libretro-beetle-sgx (>= 1.23.0)
+ Standards-Version: 3.9.8
+ Section: libs
+ 
 diff -r -u a/game.libretro.nx/debian/control b/game.libretro.nx/debian/control
 --- a/game.libretro.nx/debian/control	2020-05-26 18:38:09.000000000 +0000
 +++ b/game.libretro.nx/debian/control	2020-05-26 18:38:53.000000000 +0000

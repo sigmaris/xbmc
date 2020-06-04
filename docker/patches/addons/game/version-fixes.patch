@@ -10,6 +10,42 @@ diff -r -u a/game.libretro.2048/debian/control b/game.libretro.2048/debian/contr
  Standards-Version: 3.9.8
  Section: libs
  
+diff -r -u a/game.libretro.bsnes-mercury-accuracy/debian/control b/game.libretro.bsnes-mercury-accuracy/debian/control
+--- a/game.libretro.bsnes-mercury-accuracy/debian/control	2020-05-26 18:45:32.000000000 +0000
++++ b/game.libretro.bsnes-mercury-accuracy/debian/control	2020-05-26 18:44:53.000000000 +0000
+@@ -4,7 +4,7 @@
+ Build-Depends: debhelper (>= 9.0.0),
+                cmake,
+                kodi-addon-dev,
+-               libretro-bsnes-mercury-accuracy (>= 0.94.0) | bsnes-mercury-accuracy (>= 0.94.0)
++               libretro-bsnes-mercury-accuracy (>= 094)
+ Standards-Version: 3.9.8
+ Section: libs
+ 
+diff -r -u a/game.libretro.bsnes-mercury-balanced/debian/control b/game.libretro.bsnes-mercury-balanced/debian/control
+--- a/game.libretro.bsnes-mercury-balanced/debian/control	2020-05-26 18:45:32.000000000 +0000
++++ b/game.libretro.bsnes-mercury-balanced/debian/control	2020-05-26 18:44:53.000000000 +0000
+@@ -4,7 +4,7 @@
+ Build-Depends: debhelper (>= 9.0.0),
+                cmake,
+                kodi-addon-dev,
+-               libretro-bsnes-mercury-balanced (>= 0.94.0) | bsnes-mercury-balanced (>= 0.94.0)
++               libretro-bsnes-mercury-balanced (>= 094)
+ Standards-Version: 3.9.8
+ Section: libs
+ 
+diff -r -u a/game.libretro.bsnes-mercury-performance/debian/control b/game.libretro.bsnes-mercury-performance/debian/control
+--- a/game.libretro.bsnes-mercury-performance/debian/control	2020-05-26 18:45:32.000000000 +0000
++++ b/game.libretro.bsnes-mercury-performance/debian/control	2020-05-26 18:44:53.000000000 +0000
+@@ -4,7 +4,7 @@
+ Build-Depends: debhelper (>= 9.0.0),
+                cmake,
+                kodi-addon-dev,
+-               libretro-bsnes-mercury-performance (>= 0.94.0) | bsnes-mercury-performance (>= 0.94.0)
++               libretro-bsnes-mercury-performance (>= 094)
+ Standards-Version: 3.9.8
+ Section: libs
+ 
 diff -r -u a/game.libretro.dinothawr/debian/control b/game.libretro.dinothawr/debian/control
 --- a/game.libretro.dinothawr/debian/control	2020-05-26 18:45:32.000000000 +0000
 +++ b/game.libretro.dinothawr/debian/control	2020-05-26 18:44:53.000000000 +0000

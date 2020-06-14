@@ -34,3 +34,15 @@ diff -r -u a/game.libretro.genplus/debian/control b/game.libretro.genplus/debian
  Standards-Version: 3.9.8
  Section: libs
  
+diff -r -u a/game.libretro.parallel_n64/debian/control b/game.libretro.parallel_n64/debian/control
+--- a/game.libretro.parallel_n64/debian/control	2020-05-26 18:45:32.000000000 +0000
++++ b/game.libretro.parallel_n64/debian/control	2020-05-26 18:44:53.000000000 +0000
+@@ -4,7 +4,7 @@
+ Build-Depends: debhelper (>= 9.0.0),
+                cmake,
+                kodi-addon-dev,
+-               libretro-parallel_n64 (>= 2.0.0) | parallel_n64 (>= 2.0.0)
++               libretro-parallel-n64 (>= 2.0)
+ Standards-Version: 3.9.8
+ Section: libs
+ 

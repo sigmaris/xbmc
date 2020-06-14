@@ -121,6 +121,8 @@ def single_addon_type_pipeline(suite, addons_type):
                     },
                     "files": [
                         "/drone/kodi-build/build/addons_build/*.deb",
+                        "/drone/kodi-build/build/addons_build/*.buildinfo",
+                        "/drone/kodi-build/build/addons_build/*.changes",
                     ],
                 },
                 "depends_on": [

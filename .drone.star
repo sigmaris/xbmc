@@ -53,9 +53,28 @@ def kodi_pipeline(suite):
                 ],
             },
 
-            # Publish kodi build artifacts
+            # Publish kodi build artifacts to bintray for non-tag builds
             {
                 "name": "publish_kodi",
+                "image": "sigmaris/kodibuilder:%s" % suite,
+                "environment": {
+                    "KODI_DISTRO_CODENAME": suite,
+                    "BINTRAY_USER": "sigmaris",
+                    "BINTRAY_API_KEY": {"from_secret": "bintray_api_key"},
+                },
+                "commands": [
+                    "cd /drone/kodi-build/packages",
+                    "/drone/kodi-src/docker/publish_bintray.sh",
+                ],
+                "depends_on": ["build_kodi"],
+                "when": {
+                    "event": {"exclude": "tag"},
+                },
+            },
+
+            # Upload artifacts to Github release for tag builds
+            {
+                "name": "release_kodi",
                 "image": "plugins/github-release",
                 "settings": {
                     "api_key": {

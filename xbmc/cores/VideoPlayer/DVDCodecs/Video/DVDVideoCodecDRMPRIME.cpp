@@ -156,10 +156,6 @@ static const AVCodec* FindDecoder(CDVDStreamInfo& hints)
         return codec;
     }
 
-  codec = avcodec_find_decoder(hints.codec);
-  if (codec && (codec->capabilities & AV_CODEC_CAP_DR1) == AV_CODEC_CAP_DR1)
-    return codec;
-
   return nullptr;
 }
 

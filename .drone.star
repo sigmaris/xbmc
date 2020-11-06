@@ -22,6 +22,7 @@ def all_addons_pipelines(suite):
 
 
 def kodi_pipeline(suite):
+    docker_img = "ghcr.io/sigmaris/kodibuilder:%s" % suite
     return {
         "kind": "pipeline",
         "type": "docker",
@@ -38,7 +39,7 @@ def kodi_pipeline(suite):
             # Build Kodi alone
             {
                 "name": "build_kodi",
-                "image": "sigmaris/kodibuilder:%s" % suite,
+                "image": docker_img,
                 "environment": {
                     "KODI_DISTRO_CODENAME": suite,
                 },
@@ -56,7 +57,7 @@ def kodi_pipeline(suite):
             # Publish kodi build artifacts to bintray for non-tag builds
             {
                 "name": "publish_kodi",
-                "image": "sigmaris/kodibuilder:%s" % suite,
+                "image": docker_img,
                 "environment": {
                     "KODI_DISTRO_CODENAME": suite,
                     "BINTRAY_USER": "sigmaris",
@@ -100,6 +101,7 @@ def kodi_pipeline(suite):
 
 
 def single_addon_type_pipeline(suite, addons_type):
+    docker_img = "ghcr.io/sigmaris/kodibuilder:%s" % suite
     return {
         "kind": "pipeline",
         "type": "docker",
@@ -115,7 +117,7 @@ def single_addon_type_pipeline(suite, addons_type):
         "steps": [
             {
                 "name": "build_%s_addons" % addons_type,
-                "image": "sigmaris/kodibuilder:%s" % suite,
+                "image": docker_img,
                 "environment": {
                     "KODI_DISTRO_CODENAME": suite,
                     "ADDONS_TO_BUILD": "%s.*" % addons_type,

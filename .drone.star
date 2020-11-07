@@ -14,7 +14,8 @@ def all_addons_pipelines(suite):
         single_addon_type_pipeline(suite, "imagedecoder"),
         single_addon_type_pipeline(suite, "inputstream"),
         single_addon_type_pipeline(suite, "peripheral"),
-        single_addon_type_pipeline(suite, "pvr"),
+        addon_type_pipeline(suite, "pvr", "pvr_a_to_m", "^pvr\\.[a-m].*"),
+        addon_type_pipeline(suite, "pvr", "pvr_n_to_z", "^pvr\\.[n-z].*"),
         single_addon_type_pipeline(suite, "screensaver"),
         single_addon_type_pipeline(suite, "vfs"),
         single_addon_type_pipeline(suite, "visualization"),
@@ -101,11 +102,15 @@ def kodi_pipeline(suite):
 
 
 def single_addon_type_pipeline(suite, addons_type):
+    return addon_type_pipeline(suite, addons_type, addons_type, "%s.*" % addons_type)
+
+
+def addon_type_pipeline(suite, addons_type, job_id, regex):
     docker_img = "ghcr.io/sigmaris/kodibuilder:%s" % suite
     return {
         "kind": "pipeline",
         "type": "docker",
-        "name": "build_%s_addons_%s" % (addons_type, suite),
+        "name": "build_%s_addons_%s" % (job_id, suite),
         "platform": {
             "os": "linux",
             "arch": "arm64",
@@ -116,11 +121,11 @@ def single_addon_type_pipeline(suite, addons_type):
         },
         "steps": [
             {
-                "name": "build_%s_addons" % addons_type,
+                "name": "build_%s_addons" % job_id,
                 "image": docker_img,
                 "environment": {
                     "KODI_DISTRO_CODENAME": suite,
-                    "ADDONS_TO_BUILD": "%s.*" % addons_type,
+                    "ADDONS_TO_BUILD": regex,
                 },
                 "commands": [
                     "cd ..",
@@ -134,7 +139,7 @@ def single_addon_type_pipeline(suite, addons_type):
                 ],
             },
             {
-                "name": "publish_%s_addons" % addons_type,
+                "name": "publish_%s_addons" % job_id,
                 "image": "plugins/github-release",
                 "settings": {
                     "api_key": {
@@ -147,7 +152,7 @@ def single_addon_type_pipeline(suite, addons_type):
                     ],
                 },
                 "depends_on": [
-                    "build_%s_addons" % addons_type,
+                    "build_%s_addons" % job_id,
                 ],
                 "when": {
                     "event": "tag",

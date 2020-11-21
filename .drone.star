@@ -25,7 +25,8 @@ def addons_pipelines(suite):
 
 def games_pipelines(suite):
     return [
-        addon_type_pipeline(suite, "game", "game_libretro", "^game\\\\.libretro$"),
+        addon_type_pipeline(suite, "game", "game_libretro",        "^game\\\\.libretro$"),
+        addon_type_pipeline(suite, "game", "game_libretro_number", "^game\\\\.libretro\\\\.[0-9].*"),
         addon_type_pipeline(suite, "game", "game_libretro_a_to_b", "^game\\\\.libretro\\\\.[a-b].*"),
         addon_type_pipeline(suite, "game", "game_libretro_c_to_e", "^game\\\\.libretro\\\\.[c-e].*"),
         addon_type_pipeline(suite, "game", "game_libretro_f_to_g", "^game\\\\.libretro\\\\.[f-g].*"),

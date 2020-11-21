@@ -19,6 +19,27 @@ for D in $(ls . --ignore="*prefix")
 do
 	if [ -d "${D}/debian" ]
 	then
+
+		# Build libretro core libraries
+		if [[ "${D}" == game.libretro.* ]]
+		then
+			for DEP in ${D}/depends/common/*
+			do
+				BASE_DEP="$(basename "$DEP")"
+				echo "**********************************************"
+				echo "*** Building libretro dependency $BASE_DEP ***"
+				echo "**********************************************"
+				cmake --build . --target "$BASE_DEP"
+				# Remove build dependency on this libretro core
+				sed -e 's/kodi-addon-dev,/kodi-addon-dev/' -e "/libretro-${BASE_DEP} \(.*\) \| ${BASE_DEP} \(.*\)/d" "${D}/debian/control" > "${D}/debian/control.new"
+				mv "${D}/debian/control.new" "${D}/debian/control"
+			done
+			# Set env variable during build so this built lib is found & used
+			EXTRA_ENV="CMAKE_LIBRARY_PATH=${KODI_BUILD_DIR}/build/lib"
+		else
+			EXTRA_ENV=""
+		fi
+
 		cd "${D}"
 		echo "********************************"
 		echo "*** Building binary addon $D ***"
@@ -33,11 +54,9 @@ do
 				echo "usr/share" >> ${F}
 			done
 		fi
-		# if [[ $D == "audioencoder"* || $D == "audiodecoder"* ]]; then
-		# 	sed -i "s/-DUSE_LTO=1//g" debian/rules
-		# fi
 
-		dpkg-buildpackage -us -uc -b --jobs=auto
+		env $EXTRA_ENV dpkg-buildpackage -us -uc -b --jobs=auto
+
 		if [ $? -ne 0 ]
 		then
 			ADDONS_BUILD_FAILED+=("${D}")

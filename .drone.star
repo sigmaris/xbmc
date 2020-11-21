@@ -1,19 +1,17 @@
 def main(ctx):
     suite = "bullseye"
     if ctx.build.event == "tag" and "-addons" in ctx.build.ref:
-        return all_addons_pipelines(suite)
+        return addons_pipelines(suite)
+    elif ctx.build.event == "tag" and "-games" in ctx.build.ref:
+        return games_pipelines(suite)
     else:
         return kodi_pipeline(suite)
 
 
-def all_addons_pipelines(suite):
+def addons_pipelines(suite):
     return [
         single_addon_type_pipeline(suite, "audiodecoder"),
         single_addon_type_pipeline(suite, "audioencoder"),
-        addon_type_pipeline(suite, "game", "game_a_to_l", "^game\\\\.[a-l].*"),
-        addon_type_pipeline(suite, "game", "game_ma", "^game\\\\.ma.*"),
-        addon_type_pipeline(suite, "game", "game_mb_z", "^game\\\\.m[b-z].*"),
-        addon_type_pipeline(suite, "game", "game_n_to_z", "^game\\\\.[n-z].*"),
         single_addon_type_pipeline(suite, "imagedecoder"),
         single_addon_type_pipeline(suite, "inputstream"),
         single_addon_type_pipeline(suite, "peripheral"),
@@ -22,6 +20,22 @@ def all_addons_pipelines(suite):
         single_addon_type_pipeline(suite, "screensaver"),
         single_addon_type_pipeline(suite, "vfs"),
         single_addon_type_pipeline(suite, "visualization"),
+    ]
+
+
+def games_pipelines(suite):
+    return [
+        addon_type_pipeline(suite, "game", "game_libretro", "^game\\\\.libretro$"),
+        addon_type_pipeline(suite, "game", "game_libretro_a_to_b", "^game\\\\.libretro\\\\.[a-b].*"),
+        addon_type_pipeline(suite, "game", "game_libretro_c_to_e", "^game\\\\.libretro\\\\.[c-e].*"),
+        addon_type_pipeline(suite, "game", "game_libretro_f_to_g", "^game\\\\.libretro\\\\.[f-g].*"),
+        addon_type_pipeline(suite, "game", "game_libretro_j_to_l", "^game\\\\.libretro\\\\.[j-l].*"),
+        addon_type_pipeline(suite, "game", "game_libretro_ma",     "^game\\\\.libretro\\\\.ma.*"),
+        addon_type_pipeline(suite, "game", "game_libretro_mb_z",   "^game\\\\.libretro\\\\.m[b-z].*"),
+        addon_type_pipeline(suite, "game", "game_libretro_n_to_p", "^game\\\\.libretro\\\\.[n-p].*"),
+        addon_type_pipeline(suite, "game", "game_libretro_q_to_s", "^game\\\\.libretro\\\\.[q-s].*"),
+        addon_type_pipeline(suite, "game", "game_libretro_t_to_v", "^game\\\\.libretro\\\\.[t-v].*"),
+        addon_type_pipeline(suite, "game", "game_libretro_w_to_z", "^game\\\\.libretro\\\\.[w-z].*"),
     ]
 
 

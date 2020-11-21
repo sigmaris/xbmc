@@ -10,7 +10,10 @@ def all_addons_pipelines(suite):
     return [
         single_addon_type_pipeline(suite, "audiodecoder"),
         single_addon_type_pipeline(suite, "audioencoder"),
-        single_addon_type_pipeline(suite, "game"),
+        addon_type_pipeline(suite, "game", "game_a_to_l", "^game\\\\.[a-l].*"),
+        addon_type_pipeline(suite, "game", "game_ma", "^game\\\\.ma.*"),
+        addon_type_pipeline(suite, "game", "game_mb_z", "^game\\\\.m[b-z].*"),
+        addon_type_pipeline(suite, "game", "game_n_to_z", "^game\\\\.[n-z].*"),
         single_addon_type_pipeline(suite, "imagedecoder"),
         single_addon_type_pipeline(suite, "inputstream"),
         single_addon_type_pipeline(suite, "peripheral"),

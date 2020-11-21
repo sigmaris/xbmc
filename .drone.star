@@ -95,7 +95,7 @@ def kodi_pipeline(suite):
             # Upload artifacts to Github release for tag builds
             {
                 "name": "release_kodi",
-                "image": "plugins/github-release",
+                "image": "ghcr.io/sigmaris/drone-github-release:latest",
                 "settings": {
                     "api_key": {
                         "from_secret": "github_token",
@@ -158,7 +158,7 @@ def addon_type_pipeline(suite, addons_type, job_id, regex):
             },
             {
                 "name": "publish_%s_addons" % job_id,
-                "image": "plugins/github-release",
+                "image": "ghcr.io/sigmaris/drone-github-release:latest",
                 "settings": {
                     "api_key": {
                         "from_secret": "github_token",

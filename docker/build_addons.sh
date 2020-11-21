@@ -30,6 +30,13 @@ do
 				echo "*** Building libretro dependency $BASE_DEP ***"
 				echo "**********************************************"
 				cmake --build . --target "$BASE_DEP" -- -j$(getconf _NPROCESSORS_ONLN)
+
+				if [ $? -ne 0 ]
+				then
+					ADDONS_BUILD_FAILED+=("${D}(${BASE_DEP})")
+					continue 2
+				fi
+
 				# Remove build dependency on this libretro core
 				sed -e 's/kodi-addon-dev,/kodi-addon-dev/' -e "/libretro-${BASE_DEP} \(.*\) \| ${BASE_DEP} \(.*\)/d" "${D}/debian/control" > "${D}/debian/control.new"
 				mv "${D}/debian/control.new" "${D}/debian/control"

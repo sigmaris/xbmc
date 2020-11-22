@@ -15,8 +15,9 @@ def addons_pipelines(suite):
         single_addon_type_pipeline(suite, "imagedecoder"),
         single_addon_type_pipeline(suite, "inputstream"),
         single_addon_type_pipeline(suite, "peripheral"),
-        addon_type_pipeline(suite, "pvr", "pvr_a_to_m", "^pvr\\\\.[a-m].*"),
-        addon_type_pipeline(suite, "pvr", "pvr_n_to_z", "^pvr\\\\.[n-z].*"),
+        addon_type_pipeline(suite, "pvr", "pvr_a_to_i", "^pvr\\\\.[a-i].*"),
+        addon_type_pipeline(suite, "pvr", "pvr_j_to_q", "^pvr\\\\.[j-q].*"),
+        addon_type_pipeline(suite, "pvr", "pvr_r_to_z", "^pvr\\\\.[r-z].*"),
         single_addon_type_pipeline(suite, "screensaver"),
         single_addon_type_pipeline(suite, "vfs"),
         single_addon_type_pipeline(suite, "visualization"),
@@ -60,6 +61,11 @@ def kodi_pipeline(suite):
         "workspace": {
             "base": "/drone",
             "path": "kodi-src",
+        },
+        "trigger": {
+            "branch": [
+                "rp64-*",
+            ]
         },
         "steps": [
             # Build Kodi alone

@@ -63,8 +63,9 @@ def kodi_pipeline(suite):
             "path": "kodi-src",
         },
         "trigger": {
-            "branch": [
-                "rp64-*",
+            "ref": [
+                "refs/heads/rp64-*",
+                "refs/tags/rp64-*",
             ]
         },
         "steps": [

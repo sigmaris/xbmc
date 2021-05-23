@@ -68,6 +68,9 @@ def kodi_pipeline(suite):
                 "refs/tags/rp64-*",
             ]
         },
+        "clone": {
+            "depth": 1
+        },
         "steps": [
             # Build Kodi alone
             {
@@ -151,6 +154,9 @@ def addon_type_pipeline(suite, addons_type, job_id, regex):
         "workspace": {
             "base": "/drone",
             "path": "kodi-src",
+        },
+        "clone": {
+            "depth": 1
         },
         "steps": [
             {

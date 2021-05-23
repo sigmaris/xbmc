@@ -87,18 +87,19 @@ def kodi_pipeline(suite):
                 ],
             },
 
-            # Publish kodi build artifacts to bintray for non-tag builds
+            # Publish kodi build artifacts to filebucket for non-tag builds
             {
                 "name": "publish_kodi",
                 "image": docker_img,
                 "environment": {
                     "KODI_DISTRO_CODENAME": suite,
-                    "BINTRAY_USER": "sigmaris",
-                    "BINTRAY_API_KEY": {"from_secret": "bintray_api_key"},
+                    "FILEBUCKET_USER": "drone.io",
+                    "FILEBUCKET_PASSWORD": {"from_secret": "FILEBUCKET_PASSWORD"},
+                    "FILEBUCKET_SERVER": {"from_secret": "FILEBUCKET_SERVER"},
                 },
                 "commands": [
                     "cd /drone/kodi-build/packages",
-                    "/drone/kodi-src/docker/publish_bintray.sh",
+                    "/drone/kodi-src/docker/upload_artifacts.sh",
                 ],
                 "depends_on": ["build_kodi"],
                 "when": {

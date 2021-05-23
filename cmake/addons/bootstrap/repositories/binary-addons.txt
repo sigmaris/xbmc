@@ -1,1 +1,1 @@
-binary-addons https://github.com/kodi-game/repo-binary-addons.git Matrix
+binary-addons https://github.com/kodi-game/repo-binary-addons.git bec1c81da5228b4cdb1033be2ac764ddb9d1d9ba
